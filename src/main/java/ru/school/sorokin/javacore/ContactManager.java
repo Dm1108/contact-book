@@ -6,11 +6,18 @@ import java.util.logging.Logger;
 
 public class ContactManager {
 
-    private static final Scanner scanner = new Scanner(System.in);
-    private static final Logger logger = Logger.getLogger(Contact.class.getName());
-    private static final List<Contact> contactList = new ArrayList<>();
-    private static final Set<Contact> setContact = new HashSet<>();
-    private static final Map<String, List<Contact>> categoryContacts = new HashMap<>();
+    private Scanner scanner;
+    private static final Logger logger = Logger.getLogger(ContactManager.class.getName());
+    private List<Contact> contactList;
+    private Set<Contact> setContact;
+    private Map<String, List<Contact>> categoryContacts;
+
+    public ContactManager() {
+        this.contactList = new ArrayList<>();
+        this.setContact = new HashSet<>();
+        this.categoryContacts = new HashMap<>();
+        this.scanner = new Scanner(System.in);
+    }
 
     public void menu() {
         int point;
@@ -21,7 +28,7 @@ public class ContactManager {
         }
     }
 
-    public void getUserAction(int point) {
+    private void getUserAction(int point) {
         switch (point) {
             case 1 -> addContact();
             case 2 -> removeContactByName();
@@ -35,7 +42,7 @@ public class ContactManager {
         }
     }
 
-    public void addContact() {
+    private void addContact() {
 
         String name = getContactName();
         String phone = getContactPhone();
@@ -44,25 +51,20 @@ public class ContactManager {
 
         Contact contact = new Contact(name, phone, email, group);
         boolean isInContacts = setContact.contains(contact);
-        List<Contact> familyList = new ArrayList<>();
-        List<Contact> jobList = new ArrayList<>();
-        List<Contact> friendsList = new ArrayList<>();
-        List<Contact> favoritesList = new ArrayList<>();
+
         if (!isInContacts) {
             contactList.add(contact);
             setContact.add(contact);
-            switch (group) {
-                case "Семья" -> categoryContacts.computeIfAbsent(group, k -> familyList).add(contact);
-                case "Работа" -> categoryContacts.computeIfAbsent(group, k -> jobList).add(contact);
-                case "Друзья" -> categoryContacts.computeIfAbsent(group, k -> friendsList).add(contact);
-                case "Избранное" -> categoryContacts.computeIfAbsent(group, k -> favoritesList).add(contact);
+            if (group.equals(Group.FAMILY.getGroupName()) || group.equals(Group.JOB.getGroupName()) ||
+                    group.equals(Group.FRIENDS.getGroupName()) || group.equals(Group.FAVORITES.getGroupName())) {
+                categoryContacts.computeIfAbsent(group, k -> new ArrayList<>()).add(contact);
             }
         } else {
             System.out.println("Такой контакт уже содержится в списке контактов");
         }
     }
 
-    public void getAllContacts() {
+    private void getAllContacts() {
         System.out.println("Список");
         Iterator<Contact> iterator = contactList.iterator();
         while (iterator.hasNext()) {
@@ -79,7 +81,7 @@ public class ContactManager {
         }
     }
 
-    public void removeContactByName() {
+    private void removeContactByName() {
         String name = getContactName();
         Iterator<Contact> iterator = setContact.iterator();
         while (iterator.hasNext()) {
@@ -96,20 +98,25 @@ public class ContactManager {
         }
     }
 
-    public void findContactByName() {
+    private void findContactByName() {
         String name = getContactName();
+        if (setContact.isEmpty()) {
+            System.out.println("Нет такого имени в списке контактов");
+            return;
+        }
         Iterator<Contact> iterator = setContact.iterator();
         while (iterator.hasNext()) {
             Contact contact = iterator.next();
             if (contact.getName().equals(name)) {
                 System.out.println(contact);
+                break;
             } else {
                 System.out.println("Нет такого имени в списке контактов");
             }
         }
     }
 
-    public void findContactsByGroup() {
+    private void findContactsByGroup() {
         String group = getContactGroup();
         Iterator<Map.Entry<String, List<Contact>>> iterator = categoryContacts.entrySet().iterator();
         while (iterator.hasNext()) {
@@ -117,9 +124,10 @@ public class ContactManager {
             if (itr.getKey().equals(group)) {
                 System.out.println(itr);
                 break;
+            } else if (itr.getKey().isEmpty()) {
+                System.out.println("В группе " + itr.getKey() + " контактов нет");
             }
         }
-        System.out.println("В этой группе нет контактов");
     }
 
     private void choosePointOfMenu() {
@@ -203,12 +211,12 @@ public class ContactManager {
                     """);
             group = scanner.nextLine();
             if (group.trim().isEmpty()) {
-                System.out.println("Вы ничего не указали. Повторите ввод категории контакта");
-            } else if (group.equals("Семья") || group.equals("Работа") ||
-                    group.equals("Друзья") || group.equals("Избранное")) {
+                System.out.println("Вы ничего не указали. Повторите ввод группы контакта");
+            } else if (group.equals(Group.FAMILY.getGroupName()) || group.equals(Group.JOB.getGroupName()) ||
+                    group.equals(Group.FRIENDS.getGroupName()) || group.equals(Group.FAVORITES.getGroupName())) {
                 break;
             } else {
-                System.out.println("Такой категории нет. Выберите и введите категорию из списка категорий");
+                System.out.println("Такой группы контактов нет. Выберите и введите группу контактов");
             }
         }
         return group;
